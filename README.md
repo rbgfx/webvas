@@ -100,6 +100,7 @@ To compile and serve the playground from this checkout:
 ~~~sh
 bundle install
 BUNDLE_GEMFILE=runtime/Gemfile bundle install
+mkdir -p build
 BUNDLE_GEMFILE=runtime/Gemfile bundle exec rbwasm build \
   --ruby-version 4.0 --target wasm32-unknown-wasip1 \
   --build-profile full --patch "$(pwd)/patches/psych-wasi.patch" -o build/webvas.wasm
