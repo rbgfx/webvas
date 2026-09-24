@@ -90,7 +90,9 @@ jobs:
         working-directory: repos/webvas
         env:
           BUNDLE_GEMFILE: runtime/Gemfile
-        run: bundle exec rbwasm build --ruby-version 4.0 --target wasm32-unknown-wasip1 --build-profile full --patch "$GITHUB_WORKSPACE/repos/webvas/patches/psych-wasi.patch" -o build/webvas.wasm
+        run: |
+          mkdir -p build
+          bundle exec rbwasm build --ruby-version 4.0 --target wasm32-unknown-wasip1 --build-profile full --patch "$GITHUB_WORKSPACE/repos/webvas/patches/psych-wasi.patch" -o build/webvas.wasm
       - name: Assemble static site
         working-directory: repos/webvas
         run: ruby script/build_site
