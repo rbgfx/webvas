@@ -75,6 +75,9 @@ jobs:
         with:
           ruby-version: '4.0'
           bundler-cache: false
+      - name: Build Larb extension
+        run: gem install rake-compiler --no-document && rake compile
+        working-directory: repos/larb
       - name: Install build dependencies
         working-directory: repos/webvas
         run: |
