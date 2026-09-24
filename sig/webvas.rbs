@@ -1,0 +1,59 @@
+module Webvas
+  VERSION: String
+
+  class Error < StandardError
+  end
+
+  class Bridge
+    def initialize: (?api: untyped) -> void
+    def attach: (String selector, Integer width, Integer height, pixelated: bool) -> untyped
+    def present: (untyped handle, String bytes, Integer width, Integer height) -> untyped
+    def events: (untyped handle) -> Array[Hash[String, untyped]]
+    def resize: (untyped handle, Integer width, Integer height) -> untyped
+    def close: (untyped handle) -> untyped
+    def request_animation_frame: (Proc callback) -> untyped
+    def show_error: (String message, Array[String] backtrace) -> untyped
+    def run_shader: (String canvas, String source, String layout, Proc uniforms) -> untyped
+  end
+
+  class Backend < RBGL::GUI::Backend
+    def initialize: (width: Integer, height: Integer, ?canvas: String, ?title: String, ?pixelated: bool, ?bridge: Bridge) -> void
+    def present: (RBGL::Engine::Framebuffer framebuffer) -> untyped
+    def set_pixels: (String buffer, Integer width, Integer height) -> bool
+    def resize: (Integer width, Integer height) -> untyped
+    def poll_events: () -> Array[RBGL::GUI::Event]
+    def poll_events_raw: () -> Array[Hash[Symbol, untyped]]
+    def should_close?: () -> bool
+    def close: () -> void
+  end
+
+  module Input
+    def self.translate: (Array[Hash[String, untyped]] events, width: Integer, height: Integer) -> Array[RBGL::GUI::Event]
+    def self.convert: (Hash[String, untyped] event, width: Integer, height: Integer) -> RBGL::GUI::Event?
+    def self.coordinates: (Hash[String, untyped] event, width: Integer, height: Integer) -> [Integer, Integer]
+    def self.modifiers: (Hash[String, untyped] event) -> Array[Symbol]
+    def self.printable: (untyped key) -> String?
+  end
+
+  module KeyMap
+    def self.call: (String code, ?untyped key) -> Symbol
+  end
+
+  class Scheduler
+    def initialize: (?bridge: Bridge) -> void
+    def request_animation_frame: (Proc callback) -> untyped
+  end
+
+  class Shader
+    attr_reader source: String
+    attr_reader canvas: String
+    attr_reader layout: Hash[Symbol, untyped]
+    def initialize: (String source, ?canvas: String, ?layout: Hash[Symbol, untyped]) -> void
+    def run: (?canvas: String, ?bridge: Bridge) ?{ (Float) -> Hash[Symbol, untyped] } -> untyped
+    def stop: () -> nil
+  end
+
+  def self.run: (RBGL::GUI::Window window, ?scheduler: Scheduler, ?on_error: Proc) { (RBGL::Engine::Context, Float) -> void } -> Proc
+  def self.run_shader: (Shader shader, ?canvas: String) ?{ (Float) -> Hash[Symbol, untyped] } -> untyped
+  def self.report_error: (StandardError error) -> untyped
+end

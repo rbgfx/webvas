@@ -1,0 +1,271 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "fileutils"
+require "cgi/escape"
+require "rbconfig"
+require "socket"
+require "stringio"
+require "uri"
+require "time"
+require "zlib"
+require_relative "../lib/webvas/version"
+
+module Webvas
+  module CLI
+    STARTER = <<~'RUBY'
+      require "gesso"
+
+      Gesso.run(width: 480, height: 320, runner: :web) do
+        background "#171a18"
+        draw do
+          background "#171a18"
+          fill "#d38a62"
+          circle 240, 160, 48
+        end
+      end
+    RUBY
+    PLAYGROUND_URL = "https://rbgfx.github.io/webvas"
+    RUNTIME_URL = "#{PLAYGROUND_URL}/assets/webvas.wasm"
+    RELOAD_SCRIPT = <<~'JS'.freeze
+      (() => {
+        const directory = new URL(".", location.href);
+        const source = new URLSearchParams(location.search).get("source");
+        const sourceUrl = source && new URL(source, location.href);
+        const targets = [location.pathname];
+        if (sourceUrl && sourceUrl.origin === location.origin && sourceUrl.pathname.startsWith(directory.pathname)) {
+          targets.push(sourceUrl.pathname);
+        }
+        let previous;
+        setInterval(async () => {
+          const values = await Promise.all(targets.map(async path => {
+            try {
+              const response = await fetch(path, { method: "HEAD", cache: "no-store" });
+              return response.headers.get("ETag");
+            } catch {
+              return null;
+            }
+          }));
+          const current = values.join("|");
+          if (previous && current !== previous) location.reload();
+          previous = current;
+        }, 750);
+      })();
+    JS
+
+    module_function
+
+    def run(arguments)
+      case arguments.shift
+      when "new" then create(arguments.shift || abort("Usage: webvas new PATH"))
+      when "build" then build(arguments)
+      when "serve" then serve(arguments)
+      when "--version", "-v" then puts Webvas::VERSION
+      else
+        abort "Usage: webvas {new PATH|build [PROJECT] [-o DIR] [--runtime cdn|custom]|serve [DIRECTORY] [--port PORT]}"
+      end
+    end
+
+    def create(path)
+      project = File.expand_path(path)
+      index = File.read(File.expand_path("../site/index.html", __dir__))
+      index.gsub!('href="./style.css"', "href=\"#{PLAYGROUND_URL}/style.css\"")
+      index.gsub!('src="./app.js"', "src=\"#{PLAYGROUND_URL}/app.js\"")
+      index.gsub!('content="./assets/webvas.wasm"', "content=\"#{RUNTIME_URL}\"")
+      index.sub!("<title>Webvas — Ruby, in motion</title>", "<title>#{CGI.escapeHTML(File.basename(project))} · Webvas</title>")
+      files = {
+        "index.html" => index,
+        "app.rb" => STARTER,
+        "Gemfile" => <<~GEMFILE,
+        source "https://rubygems.org"
+
+        gem "gesso"
+        gem "webvas", git: "https://github.com/rbgfx/webvas"
+        gem "ruby_wasm", "~> 2.10.1"
+        gem "js", "~> 2.10.1"
+      GEMFILE
+        "README.md" => <<~README,
+        # #{File.basename(project)}
+
+        Edit app.rb, then serve the project with Webvas:
+
+            webvas serve
+
+        Open http://127.0.0.1:8000/?source=app.rb. Build a static site with `webvas build -o dist/`.
+        To compile a custom runtime, add gems to the Gemfile, run `bundle install`, then use
+        `webvas build --runtime custom -o dist/`.
+      README
+        ".gitignore" => "/.webvas/\n/public/\n"
+      }
+      existing = files.keys.select { |name| File.exist?(File.join(project, name)) }
+      abort "Already exists: #{existing.join(", ")}" unless existing.empty?
+
+      FileUtils.mkdir_p(project)
+      files.each { |name, contents| File.write(File.join(project, name), contents) }
+      puts "Created #{project}/index.html and #{project}/app.rb"
+    end
+
+    def build(arguments)
+      project = Dir.pwd
+      project_argument_seen = false
+      destination = nil
+      runtime = "cdn"
+      until arguments.empty?
+        argument = arguments.shift
+        case argument
+        when "-o", "--output" then destination = arguments.shift || abort("Missing path after #{argument}")
+        when "--runtime" then runtime = arguments.shift || abort("Missing runtime after --runtime")
+        when "--help", "-h" then abort "Usage: webvas build [PROJECT] [-o DIRECTORY] [--runtime cdn|custom]"
+        else
+          if !project_argument_seen && !argument.start_with?("-")
+            project = File.expand_path(argument)
+            project_argument_seen = true
+          else
+            abort "Unexpected argument: #{argument}"
+          end
+        end
+      end
+      abort "Runtime must be cdn or custom" unless %w[cdn custom].include?(runtime)
+
+      root = File.expand_path("..", __dir__)
+      destination = File.expand_path(destination || "public", project)
+      wasm = nil
+      runtime_url = RUNTIME_URL
+      if runtime == "custom"
+        wasm = File.join(project, ".webvas", "build", "webvas.wasm")
+        gemfile = File.join(project, "Gemfile")
+        runtime_gemfile = File.join(project, "runtime", "Gemfile")
+        project_gemfile = File.file?(gemfile) && File.read(gemfile).match?(/^\s*gem\s+["']ruby_wasm["']/)
+        gemfile = if File.file?(runtime_gemfile)
+                    runtime_gemfile
+                  elsif project_gemfile
+                    gemfile
+                  else
+                    File.join(root, "runtime", "Gemfile")
+                  end
+        FileUtils.mkdir_p(File.dirname(wasm))
+        env = { "BUNDLE_GEMFILE" => gemfile }
+        success = system(env, "bundle", "exec", "rbwasm", "build", "--ruby-version", "4.0",
+                         "--target", "wasm32-unknown-wasip1", "--build-profile", "full",
+                         "--patch", File.join(root, "patches", "psych-wasi.patch"), "-o", wasm,
+                         chdir: project)
+        abort "ruby.wasm build failed" unless success
+        runtime_url = "./assets/webvas.wasm"
+      end
+
+      command = [RbConfig.ruby, File.join(root, "script", "build_site"), destination, runtime_url]
+      command << wasm if wasm
+      success = system(*command)
+      abort "Playground build failed" unless success
+      app = File.join(project, "app.rb")
+      FileUtils.cp(app, File.join(destination, "app.rb")) if File.file?(app)
+      puts "Open http://127.0.0.1:8000/?source=app.rb" if File.file?(app)
+    end
+
+    def serve(arguments)
+      port = 8000
+      directory = nil
+      until arguments.empty?
+        argument = arguments.shift
+        if argument == "--port"
+          port = Integer(arguments.shift || abort("Missing port after --port"))
+        elsif directory.nil?
+          directory = argument
+        else
+          abort "Usage: webvas serve [DIRECTORY] [--port PORT]"
+        end
+      end
+      abort "Port must be between 1 and 65535" unless port.between?(1, 65_535)
+
+      serve_static(File.expand_path(directory || Dir.pwd), port)
+    end
+
+    def serve_static(directory, port)
+      root = File.realpath(directory)
+      server = TCPServer.new("127.0.0.1", port)
+      puts "Serving #{root} at http://127.0.0.1:#{port}/"
+      loop do
+        client = server.accept
+        Thread.new(client, root) { |socket, base| handle_request(socket, base) }
+      end
+    ensure
+      server&.close
+    end
+
+    def handle_request(socket, root)
+      request = socket.gets("\n", 8192)&.split
+      return unless request
+
+      method, target = request
+      headers = {}
+      while (line = socket.gets("\n", 8192)) && line != "\r\n" && line != "\n"
+        name, value = line.split(":", 2)
+        headers[name.downcase] = value.to_s.strip if value
+      end
+      unless %w[GET HEAD].include?(method)
+        return response(socket, 405, "Method not allowed", "text/plain", "Method not allowed")
+      end
+      path = URI::RFC2396_Parser.new.unescape(URI.parse(target).path)
+      if path == "/__webvas_reload.js"
+        return response(socket, 200, "OK", "text/javascript", RELOAD_SCRIPT, "Cache-Control" => "no-store")
+      end
+      candidate = File.realpath(File.join(root, path.delete_prefix("/")))
+      candidate = File.realpath(File.join(candidate, "index.html")) if File.directory?(candidate)
+      unless candidate.start_with?("#{root}/") || candidate == root
+        return response(socket, 404, "Not found", "text/plain", "Not found")
+      end
+      return response(socket, 404, "Not found", "text/plain", "Not found") unless File.file?(candidate)
+
+      type = { ".css" => "text/css", ".html" => "text/html", ".js" => "text/javascript",
+               ".json" => "application/json", ".wasm" => "application/wasm", ".rb" => "text/plain" }
+      content_type = type.fetch(File.extname(candidate), "application/octet-stream")
+      content_type = "#{content_type}; charset=utf-8" if content_type.start_with?("text/", "application/json")
+      body = File.binread(candidate)
+      if content_type.start_with?("text/html")
+        hook = '<script src="/__webvas_reload.js" defer></script>'
+        body.sub!(%r{</body>}i) { |closing| "#{hook}#{closing}" } || body.concat(hook)
+      end
+      response_headers = {
+        "Content-Type" => content_type,
+        "Last-Modified" => File.mtime(candidate).httpdate,
+        "ETag" => %Q("#{File.size(candidate).to_s(16)}-#{File.mtime(candidate).to_f}"),
+        "Cache-Control" => File.extname(candidate) == ".wasm" ? "public, max-age=86400" : "no-store",
+        "X-Content-Type-Options" => "nosniff"
+      }
+      response_headers["Vary"] = "Accept-Encoding" if headers.fetch("accept-encoding", "").include?("gzip")
+      if gzip_accepted?(headers) && body.bytesize > 1024
+        buffer = StringIO.new("".b)
+        Zlib::GzipWriter.wrap(buffer) { |gzip| gzip.write(body) }
+        body = buffer.string
+        response_headers["Content-Encoding"] = "gzip"
+      end
+      response_headers["Content-Length"] = body.bytesize
+      socket.write("HTTP/1.1 200 OK\r\n#{response_headers.map { |name, value| "#{name}: #{value}" }.join("\r\n")}\r\nConnection: close\r\n\r\n")
+      socket.write(body) unless method == "HEAD"
+    rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ENOTCONN, Errno::ECONNABORTED
+      nil
+    rescue ArgumentError, Errno::ENOENT, URI::InvalidURIError
+      response(socket, 404, "Not found", "text/plain", "Not found")
+    ensure
+      socket.close
+    end
+
+    def response(socket, code, reason, type, body, headers = {})
+      response_headers = {
+        "Content-Type" => "#{type}; charset=utf-8",
+        "Content-Length" => body.bytesize,
+        "Connection" => "close"
+      }.merge(headers)
+      socket.write("HTTP/1.1 #{code} #{reason}\r\n#{response_headers.map { |name, value| "#{name}: #{value}" }.join("\r\n")}\r\n\r\n#{body}")
+    end
+
+    def gzip_accepted?(headers)
+      headers.fetch("accept-encoding", "").split(",").any? do |encoding|
+        name, *parameters = encoding.strip.split(";")
+        name == "gzip" && parameters.none? { |parameter| parameter.strip.match?(/\Aq=0(?:\.0*)?\z/) }
+      end
+    end
+  end
+end
+
+Webvas::CLI.run(ARGV) if $PROGRAM_NAME == __FILE__

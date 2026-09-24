@@ -1,0 +1,60 @@
+name: Ruby
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ${{ matrix.os }}
+    name: Ruby ${{ matrix.ruby }} · ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        ruby: ['3.1', '3.2', '3.3', '3.4', '4.0']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: rbgfx/webvas
+          path: repos/webvas
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: rbgfx/glaze
+          path: repos/glaze
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: rbgfx/larb
+          path: repos/larb
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: rbgfx/rbgl
+          path: repos/rbgl
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: rbgfx/rlsl
+          path: repos/rlsl
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: rbgfx/tessel
+          path: repos/tessel
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: false
+      - name: Install dependencies
+        working-directory: repos/webvas
+        run: bundle install
+      - name: Verify
+        working-directory: repos/webvas
+        run: bundle exec rake verify

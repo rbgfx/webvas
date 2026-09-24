@@ -1,0 +1,47 @@
+module RBGL
+  module Engine
+    class Framebuffer
+      attr_reader width: Integer
+      attr_reader height: Integer
+      def to_rgba_bytes: () -> String
+    end
+
+    class Context
+    end
+  end
+
+  module GUI
+    class Event
+      attr_reader type: Symbol
+      def initialize: (Symbol, **untyped) -> void
+      def []: (Symbol | String key) -> untyped
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
+    class Backend
+      attr_reader width: Integer
+      attr_reader height: Integer
+      attr_reader title: String
+      def initialize: (Integer width, Integer height, ?String title, **untyped) -> void
+      def present: (RBGL::Engine::Framebuffer framebuffer) -> untyped
+      def poll_events: () -> Array[RBGL::GUI::Event]
+      def poll_events_raw: () -> Array[Hash[Symbol, untyped]]
+      def resize: (Integer width, Integer height) -> void
+      def set_pixels: (String buffer, Integer width, Integer height) -> untyped
+      def should_close?: () -> bool
+      def close: () -> void
+    end
+
+    class Window
+      attr_reader context: RBGL::Engine::Context
+      attr_reader backend: RBGL::GUI::Backend
+      def initialize: (width: Integer, height: Integer, ?title: String, ?backend: Symbol | RBGL::GUI::Backend, **untyped) -> void
+      def on: (Symbol event_type) { (RBGL::GUI::Event) -> void } -> void
+      def step: (?Float now) { (RBGL::Engine::Context, Float) -> void } -> bool
+      def stop: () -> void
+      def set_pixels: (String buffer) -> untyped
+      def should_close?: () -> bool
+      def close: () -> void
+    end
+  end
+end

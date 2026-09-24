@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://rbgfx.github.io https://cdn.jsdelivr.net 'wasm-unsafe-eval' 'unsafe-eval'; worker-src blob:; connect-src 'self' https://rbgfx.github.io data:; style-src 'self' https://rbgfx.github.io; img-src 'self' https://rbgfx.github.io data: blob:; font-src 'self' https://rbgfx.github.io; object-src 'none'; base-uri 'self'">
+    <meta name="webvas-runtime" content="./assets/webvas.wasm">
+    <meta name="description" content="Run Ruby sketches in your browser with RBGL, Gesso, and ruby.wasm.">
+    <title>Webvas — Ruby, in motion</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="wordmark" href="./" aria-label="Webvas home"><span class="mark">W</span> webvas</a>
+      <div class="top-meta"><span class="live-dot"></span><span>Ruby graphics, in the browser</span><a href="https://github.com/rbgfx/webvas">GitHub ↗</a></div>
+    </header>
+    <main>
+      <section class="intro">
+        <h1>Write Ruby.<br><span>Watch it move.</span></h1>
+        <p class="lede">A quiet workspace for sketches, pixels, and shaders.<br>Runs in a dedicated browser worker.</p>
+      </section>
+      <section class="workbench" aria-label="Ruby sketch editor">
+        <div class="toolbar">
+          <div class="file-label"><span class="file-icon">◈</span><span>sketch.rb</span><span class="dirty" id="dirty" aria-hidden="true">●</span></div>
+          <label class="example-select"><span class="sr-only">Load an example</span>
+            <select id="examples"><option value="">Examples</option></select>
+          </label>
+          <div class="toolbar-actions">
+            <button class="quiet-button" id="share" type="button">Share</button>
+            <button class="quiet-button" id="download" type="button">Download .rb</button>
+            <button class="quiet-button" id="download-html" type="button">Download HTML</button>
+            <button class="run-button" id="run" type="button"><span aria-hidden="true">▶</span> Run <kbd>⌘ ↵</kbd></button>
+          </div>
+        </div>
+        <div class="panes">
+          <div class="editor-pane">
+            <div class="pane-heading"><span>EDITOR</span><span>Ruby 4.0 · UTF-8</span></div>
+            <label class="sr-only" for="source">Ruby source code</label>
+            <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+          </div>
+          <div class="stage-pane">
+            <div class="pane-heading"><span>CANVAS</span><span id="canvas-size">480 × 320</span></div>
+            <div class="stage-wrap" id="stage">
+              <div class="loading" id="loading"><span class="spinner" aria-hidden="true"></span><span id="loading-label">Starting Ruby runtime</span></div>
+            </div>
+            <div class="console" aria-live="polite" aria-atomic="true"><span class="console-dot"></span><span id="status">Preparing the drawing machine…</span></div>
+          </div>
+        </div>
+        <footer class="workbench-foot"><span>Runs in a dedicated worker</span><span>Ctrl / ⌘ + Enter to run</span><span id="performance-state">Frame timing warming up</span><span id="runtime-state">WASM loading</span></footer>
+      </section>
+      <p class="note"><span>✳</span> Source is sent only to the local worker. Share links contain compressed source text.</p>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

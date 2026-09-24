@@ -1,0 +1,9 @@
+--- a/ext/psych/extconf.rb
++++ b/ext/psych/extconf.rb
+@@ -40,3 +40,3 @@
+   # default to pre-installed libyaml
+-elsif pkg_config('yaml-0.1')
++elsif !CROSS_COMPILING && pkg_config('yaml-0.1')
+   # found with pkg-config
+ else
+   dir_config('libyaml')
