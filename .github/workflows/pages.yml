@@ -91,14 +91,14 @@ jobs:
           bundler-cache: true
           working-directory: main
       - name: Build Larb native extension
-        run: |
-          gem install rake-compiler --no-document # zizmor: ignore[adhoc-packages]
-          rake compile
+        run: bundle install && bundle exec rake compile
         working-directory: larb
       - name: Verify Ruby package
         run: bundle exec rake verify
       - name: Install WebAssembly build dependencies
         run: BUNDLE_GEMFILE=runtime/Gemfile bundle install
+      - name: Create WebAssembly output directory
+        run: mkdir -p build
       - name: Build WebAssembly runtime
         run: >-
           BUNDLE_GEMFILE=runtime/Gemfile bundle exec rbwasm build
