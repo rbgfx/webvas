@@ -52,7 +52,9 @@ jobs:
         env:
           BUNDLE_GEMFILE: ${{ github.workspace }}/.git/release.Gemfile
         run: |
-          bundle exec rake
+          glaze_runner="$(bundle show glaze)/lib/glaze/webgpu_runner.js"
+          sed "s|../glaze/lib/glaze/webgpu_runner.js|$glaze_runner|" Rakefile > .git/release.Rakefile
+          bundle exec rake -f .git/release.Rakefile
           gemspec="$(find . -maxdepth 1 -name '*.gemspec' -print -quit)"
           gem build --strict "$gemspec" --output "$RUNNER_TEMP/package.gem"
       - name: Install runtime dependencies
