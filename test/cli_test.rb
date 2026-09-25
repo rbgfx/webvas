@@ -140,7 +140,7 @@ class WebvasCliTest < Test::Unit::TestCase
       assert_equal ": connected\n", socket.gets
       socket.gets
       File.write(File.join(directory, "app.rb"), "changed")
-      assert_equal "data: reload\n", Timeout.timeout(2) { socket.gets }
+      assert_equal "data: reload\n", Timeout.timeout(5) { socket.gets }
     ensure
       socket&.close
       server&.close

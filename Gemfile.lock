@@ -1,20 +1,4 @@
 PATH
-  remote: ../larb
-  specs:
-    larb (1.0.1)
-
-PATH
-  remote: ../rbgl
-  specs:
-    rbgl (1.0.0)
-      larb (~> 1.0)
-
-PATH
-  remote: ../tessel
-  specs:
-    tessel (0.2.0)
-
-PATH
   remote: .
   specs:
     webvas (0.3.1)
@@ -29,6 +13,7 @@ GEM
     docile (1.4.1)
     json (3.0.2)
     language_server-protocol (3.17.0.6)
+    larb (1.0.1)
     lint_roller (1.1.0)
     logger (1.7.0)
     parallel (2.2.0)
@@ -40,10 +25,15 @@ GEM
     racc (1.8.1)
     rainbow (3.1.1)
     rake (13.4.2)
+    rbgl (1.0.0)
+      larb (>= 1.0.0)
+      rlsl
     rbs (3.10.4)
       logger
       tsort
     regexp_parser (2.13.0)
+    rlsl (1.0.0)
+      prism
     rubocop (1.91.0)
       json (>= 2.3)
       language_server-protocol (~> 3.17.0.2)
@@ -65,6 +55,7 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.13.2)
     simplecov_json_formatter (0.1.4)
+    tessel (0.2.0)
     test-unit (3.7.8)
       power_assert
     tsort (0.2.0)
@@ -78,13 +69,13 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  larb!
+  larb
   rake (~> 13.0)
-  rbgl!
+  rbgl
   rbs (~> 3.0)
   rubocop (~> 1.0)
   simplecov (~> 0.22)
-  tessel!
+  tessel
   test-unit (~> 3.6)
   webvas!
 

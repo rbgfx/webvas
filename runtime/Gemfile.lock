@@ -1,42 +1,4 @@
 PATH
-  remote: ../../gesso
-  specs:
-    gesso (0.1.0)
-      glyphic (>= 0.1.0)
-      larb (>= 1.0.0)
-      rbgl (>= 1.0.0)
-      rlsl (>= 1.0.0)
-      tessel (>= 0.1.0)
-
-PATH
-  remote: ../../glyphic
-  specs:
-    glyphic (0.1.0)
-      tessel (>= 0.1.0)
-
-PATH
-  remote: ../../larb
-  specs:
-    larb (1.0.1)
-
-PATH
-  remote: ../../rbgl
-  specs:
-    rbgl (1.0.0)
-      larb (~> 1.0)
-
-PATH
-  remote: ../../rlsl
-  specs:
-    rlsl (1.0.0)
-      prism (>= 1.0.0)
-
-PATH
-  remote: ../../tessel
-  specs:
-    tessel (0.2.0)
-
-PATH
   remote: ..
   specs:
     webvas (0.3.1)
@@ -47,9 +9,22 @@ GEM
   remote: https://rubygems.org/
   specs:
     base64 (0.3.0)
+    gesso (0.1.0)
+      glyphic (>= 0.1.0)
+      larb (>= 1.0.0)
+      rbgl (>= 1.0.0)
+      tessel (>= 0.1.0)
+    glyphic (0.1.0)
+      tessel (>= 0.1.0)
     js (2.10.1)
+    larb (1.0.1)
     logger (1.7.0)
     prism (1.9.0)
+    rbgl (1.0.0)
+      larb (>= 1.0.0)
+      rlsl
+    rlsl (1.0.0)
+      prism
     ruby_wasm (2.10.1)
       logger
     ruby_wasm (2.10.1-aarch64-linux)
@@ -64,6 +39,7 @@ GEM
       logger
     ruby_wasm (2.10.1-x86_64-linux-musl)
       logger
+    tessel (0.2.0)
 
 PLATFORMS
   aarch64-linux
@@ -75,27 +51,27 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
-  gesso!
-  glyphic!
+  gesso
+  glyphic
   js (~> 2.10.1)
-  larb!
-  rbgl!
-  rlsl!
+  larb
+  rbgl
+  rlsl
   ruby_wasm (~> 2.10.1)
-  tessel!
+  tessel
   webvas!
 
 CHECKSUMS
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   bundler (4.0.19) sha256=b48056e4c77fb3853cc47775b5447ede44aaa4f53c32f168014ab4fe86587d47
-  gesso (0.1.0)
-  glyphic (0.1.0)
+  gesso (0.1.0) sha256=8db5c88c10af90d492c5f43f0c9a3fa298fa305b9f2ea799920bfc0758bbd888
+  glyphic (0.1.0) sha256=e84ca05818f8abb2c08579d79915325c3de1d4612880b8b2e2a59f9667b0af47
   js (2.10.1) sha256=c5fb88c60ea936234f818ff240f2ab0c42a57c25ab9b575211fcc4d702d059fb
-  larb (1.0.1)
+  larb (1.0.1) sha256=01b4f244f17a18a11a03aaa29d51ecfdae7d41508f73f44761befbf765410d9d
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
-  rbgl (1.0.0)
-  rlsl (1.0.0)
+  rbgl (1.0.0) sha256=428cd859dcc5cb3f309d27ef28a8f2287c440b11fffb638a3b28ca21118e91bf
+  rlsl (1.0.0) sha256=6f6d4f2882c8db78dddc9ec80b2e13b743e703f71ac057d94d5a0acb2738e3ee
   ruby_wasm (2.10.1) sha256=874e0acb783a8326bfb0db892004816c26963a4276a9f719791a8828e53a05f1
   ruby_wasm (2.10.1-aarch64-linux) sha256=133ab6ad86ff2942a4dd187ae2af87a42bbb31b42fd1ac82f738cbf658649c17
   ruby_wasm (2.10.1-aarch64-linux-musl) sha256=b92cfb5168d95837fb051c29e395c65129ef469ddd557f498948d1f20eb5bab7
@@ -103,7 +79,7 @@ CHECKSUMS
   ruby_wasm (2.10.1-x86_64-darwin) sha256=40291bed5b48c858317a31437e59d56091edda2f2c498b532238eda4cbf044d4
   ruby_wasm (2.10.1-x86_64-linux) sha256=728e29dc688246572b56dcef1c7b131431d07865320c9b8434dd1ccdfd63db2b
   ruby_wasm (2.10.1-x86_64-linux-musl) sha256=c4d16572f9a465e460490d0608e817239c5e0ddfc9553f18db2bcaebecbcdd8d
-  tessel (0.2.0)
+  tessel (0.2.0) sha256=9f7ffc113876262198007e461da1f4010ed0ccff722a0a483297577c09585b6a
   webvas (0.3.1)
 
 BUNDLED WITH

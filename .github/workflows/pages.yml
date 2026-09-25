@@ -48,55 +48,16 @@ jobs:
         with:
           path: main
           persist-credentials: false
-      - name: Checkout Larb
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/larb
-          path: larb
-          persist-credentials: false
-      - name: Checkout RBGL
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/rbgl
-          path: rbgl
-          persist-credentials: false
-      - name: Checkout Tessel
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/tessel
-          path: tessel
-          persist-credentials: false
-      - name: Checkout Gesso
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/gesso
-          path: gesso
-          persist-credentials: false
-      - name: Checkout Glyphic
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/glyphic
-          path: glyphic
-          persist-credentials: false
-      - name: Checkout RLSL
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/rlsl
-          path: rlsl
-          persist-credentials: false
       - uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1.323.0
         with:
           ruby-version: "4.0"
           bundler: default
           bundler-cache: true
           working-directory: main
-      - name: Build Larb native extension
-        run: bundle install && bundle exec rake compile
-        working-directory: larb
       - name: Verify Ruby package
         run: bundle exec rake verify
       - name: Install WebAssembly build dependencies
-        run: BUNDLE_GEMFILE=runtime/Gemfile bundle install
+        run: BUNDLE_GEMFILE=runtime/Gemfile bundle install --full-index
       - name: Create WebAssembly output directory
         run: mkdir -p build
       - name: Build WebAssembly runtime

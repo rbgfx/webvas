@@ -27,73 +27,15 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
           persist-credentials: false
-      - name: Checkout Larb
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/larb
-          ref: main
-          path: larb
-          persist-credentials: false
-      - name: Checkout RBGL
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/rbgl
-          ref: main
-          path: rbgl
-          persist-credentials: false
-      - name: Checkout tessel
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/tessel
-          ref: main
-          path: tessel
-          persist-credentials: false
-      - name: Checkout rlsl
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/rlsl
-          ref: main
-          path: rlsl
-          persist-credentials: false
-      - name: Checkout Gesso
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/gesso
-          ref: main
-          path: gesso
-          persist-credentials: false
-      - name: Checkout Glyphic
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/glyphic
-          ref: main
-          path: glyphic
-          persist-credentials: false
-      - name: Checkout Glaze
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: rbgfx/glaze
-          ref: main
-          path: glaze
-          persist-credentials: false
-      - name: Link local dependencies
+      - name: Use published gems for release checks
         run: |
-          ln -s "$GITHUB_WORKSPACE/larb" "$GITHUB_WORKSPACE/../larb"
-          ln -s "$GITHUB_WORKSPACE/rbgl" "$GITHUB_WORKSPACE/../rbgl"
-          ln -s "$GITHUB_WORKSPACE/tessel" "$GITHUB_WORKSPACE/../tessel"
-          ln -s "$GITHUB_WORKSPACE/rlsl" "$GITHUB_WORKSPACE/../rlsl"
-          ln -s "$GITHUB_WORKSPACE/gesso" "$GITHUB_WORKSPACE/../gesso"
-          ln -s "$GITHUB_WORKSPACE/glyphic" "$GITHUB_WORKSPACE/../glyphic"
-          ln -s "$GITHUB_WORKSPACE/glaze" "$GITHUB_WORKSPACE/../glaze"
+          sed -i -E 's/, path: "\.\.\/[^\"]+"//' Gemfile
       - name: Set up Ruby
         uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1.323.0
         with:
           ruby-version: '4.0'
           bundler: default
-      - name: Build Larb native extension
-        run: bundle install && bundle exec rake compile
-        working-directory: larb
-      - run: bundle install
+      - run: bundle install --full-index
       - name: Verify tag and version
         env:
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
@@ -107,7 +49,7 @@ jobs:
           gemspec="$(find . -maxdepth 1 -name '*.gemspec' -print -quit)"
           gem build --strict "$gemspec" --output "$RUNNER_TEMP/package.gem"
       - name: Install runtime dependencies
-        run: BUNDLE_GEMFILE=runtime/Gemfile bundle install
+        run: BUNDLE_GEMFILE=runtime/Gemfile bundle install --full-index
       - name: Build WebAssembly runtime
         run: >-
           BUNDLE_GEMFILE=runtime/Gemfile bundle exec rbwasm build
