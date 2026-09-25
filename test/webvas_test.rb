@@ -43,21 +43,6 @@ class WebvasTest < Test::Unit::TestCase
     def showError(*args) = @calls << [:showError, *args]
   end
 
-  class FakeShaderRunner
-    attr_reader :stopped
-
-    def stop = (@stopped = true)
-  end
-
-  class FakeShaderBridge
-    attr_reader :arguments, :runner
-
-    def run_shader(*arguments)
-      @arguments = arguments
-      @runner = FakeShaderRunner.new
-    end
-  end
-
   class FakeWindow
     attr_reader :steps, :closed
 
@@ -116,7 +101,7 @@ class WebvasTest < Test::Unit::TestCase
     assert_raise(ArgumentError) { Webvas::Input.coordinates(hidden, width: 0, height: 3) }
   end
 
-  def test_backend_queues_gesso_pixels_until_window_presents
+  def test_backend_queues_rgba_pixels_until_window_presents
     bridge = FakeBridge.new
     backend = Webvas::Backend.new(width: 2, height: 1, bridge: bridge)
     pixels = "\x01\x02\x03\xff".b * 2
@@ -142,29 +127,6 @@ class WebvasTest < Test::Unit::TestCase
     assert_equal [{ "type" => "wheel", "deltaY" => 2 }], bridge.events(4)
     bridge.show_error("bad", ["line 1", "line 2"])
     assert_equal [:showError, "bad", "line 1\nline 2"], api.calls.last
-  end
-
-  def test_shader_serializes_layout_and_stops_previous_run
-    bridge = FakeShaderBridge.new
-    shader = Webvas::Shader.new("wgsl", layout: { fields: {}, size: 16 })
-    shader.run(bridge:) { |time| { time: time } }
-    first_runner = bridge.runner
-    shader.run(bridge:)
-
-    assert_true first_runner.stopped
-    assert_equal "#screen", bridge.arguments[0]
-    assert_equal "wgsl", bridge.arguments[1]
-    assert_equal({ "fields" => {}, "size" => 16 }, JSON.parse(bridge.arguments[2]))
-    assert_equal "{}", bridge.arguments[3].call(2.0)
-    shader.stop
-    assert_true bridge.runner.stopped
-  end
-
-  def test_shader_default_layout_contains_standard_uniforms
-    layout = Webvas::Shader.new("wgsl").layout
-
-    assert_equal 32, layout[:size]
-    assert_equal({ offset: 16, type: :vec4 }, layout[:fields][:mouse])
   end
 
   def test_scheduler_reuses_one_animation_callback

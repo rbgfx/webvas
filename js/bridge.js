@@ -20,7 +20,6 @@
       const handle = { id: nextId++, canvas, context, events: pendingEvents.splice(0) };
       globalThis.postMessage({ type: "webvas:pixelated", selector, enabled: pixelated });
       canvases.set(handle.id, handle);
-      globalThis.postMessage({ type: "webvas:size", width, height });
       return handle.id;
     },
 
@@ -46,19 +45,6 @@
     },
 
     pushEvent(event) {
-      const canvas = canvases.values().next().value?.canvas || globalThis.WebvasCanvases?.["#screen"];
-      if (canvas && event.clientX !== undefined) {
-        const width = Number(event.rectWidth);
-        const height = Number(event.rectHeight);
-        const x = width > 0 ? Math.floor((event.clientX - event.left) * canvas.width / width) : 0;
-        const y = height > 0 ? Math.floor((event.clientY - event.top) * canvas.height / height) : 0;
-        const mouse = globalThis.WebvasMouse || [0, 0, 0, 0];
-        mouse[0] = Math.max(0, Math.min(canvas.width - 1, x));
-        mouse[1] = canvas.height - 1 - Math.max(0, Math.min(canvas.height - 1, y));
-        if (event.type === "pointerdown") [mouse[2], mouse[3]] = [mouse[0], mouse[1]];
-        if (event.type === "pointerup") [mouse[2], mouse[3]] = [-Math.abs(mouse[2]), -Math.abs(mouse[3])];
-        globalThis.WebvasMouse = mouse;
-      }
       if (!canvases.size) {
         if (pendingEvents.length === eventLimit) pendingEvents.shift();
         pendingEvents.push(event);
@@ -77,10 +63,6 @@
 
     close(id) {
       canvases.delete(id);
-    },
-
-    shaderMode(canvas) {
-      globalThis.postMessage({ type: "webvas:mode", canvas });
     },
 
     showError(message, backtrace) {

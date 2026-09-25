@@ -4,34 +4,10 @@ const pendingEvents = [];
 
 globalThis.window = {
   requestAnimationFrame(callback) {
-    return setTimeout(() => {
-      const now = performance.now();
-      const started = now;
-      callback(now);
-      frameMetrics(now, performance.now() - started);
-    }, 1000 / 60);
+    return setTimeout(() => callback(performance.now()), 1000 / 60);
   }
 };
 globalThis.requestAnimationFrame ||= callback => globalThis.window.requestAnimationFrame(callback);
-
-let metricFrames = 0;
-let metricStarted;
-let callbackTime = 0;
-
-function frameMetrics(now, elapsed) {
-  metricStarted ??= now;
-  metricFrames += 1;
-  callbackTime += elapsed;
-  if (metricFrames < 60) return;
-  const duration = now - metricStarted;
-  send("metrics", {
-    fps: (metricFrames - 1) * 1000 / duration,
-    callbackMs: callbackTime / metricFrames
-  });
-  metricFrames = 0;
-  callbackTime = 0;
-  metricStarted = now;
-}
 
 function send(type, payload = {}) {
   globalThis.postMessage({ type: "webvas:" + type, ...payload });
@@ -42,11 +18,7 @@ globalThis.addEventListener("message", async event => {
   try {
     if (message?.type === "webvas:init") {
       await import(message.bridgeUrl);
-      await import(message.shaderUrl);
-      globalThis.WebvasCanvases = {
-        [message.screenSelector || "#screen"]: message.screen,
-        [message.gpuSelector || "#gpu"]: message.gpu
-      };
+      globalThis.WebvasCanvases = { [message.selector]: message.canvas };
       pendingEvents.splice(0).forEach(input => globalThis.WebvasBridge.pushEvent(input));
       send("loading", { message: "Downloading the Ruby drawing machine…" });
       const { DefaultRubyVM } = await import("https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.10.1/dist/browser/+esm");

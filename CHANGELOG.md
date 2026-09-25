@@ -1,11 +1,9 @@
 # Changelog
 
-## [0.3.0] - 2026-09-25
+## [0.1.0] - Unreleased
 
 ### Added
 
-- Add the RBGL browser backend, pointer and keyboard input, and Gesso runner.
-- Add RLSL WebGPU rendering and the shared Glaze shader runner.
-- Add a nine-example playground, compressed sharing, source highlighting on errors, and HTML export.
-- Add `webvas new`, `serve`, and `build` commands with gzip and live reload.
-- Report Ruby callback frame timing and runtime size measurements.
+- Add the RBGL browser backend with RGBA frame transfer and browser input translation.
+- Drive RBGL windows through `requestAnimationFrame` and `Window#step`.
+- Add a browser loader and a tested interactive triangle example.

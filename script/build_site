@@ -2,51 +2,20 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require "cgi"
-require "rubygems"
-require "uri"
 require "zlib"
 
 root = File.expand_path("..", __dir__)
 destination = File.expand_path(ARGV.fetch(0, File.join(root, "public")))
-runtime_url = ARGV.fetch(1, "./assets/webvas.wasm")
-wasm = ARGV[2] || File.join(root, "build", "webvas.wasm")
-uri = URI.parse(runtime_url)
-if uri.host && (uri.scheme != "https" || uri.userinfo)
-  abort "Runtime URL must use HTTPS"
-end
-glaze_runner = File.expand_path("../glaze/lib/glaze/webgpu_runner.js", root)
-unless File.file?(glaze_runner)
-  glaze = Gem::Specification.find_by_name("glaze")
-  glaze_runner = File.join(glaze.full_gem_path, "lib", "glaze", "webgpu_runner.js")
-end
-
-abort "Build the WebAssembly runtime first: #{wasm}" if runtime_url.start_with?(".", "/") && !File.file?(wasm)
-abort "Missing shared Glaze WebGPU runner: #{glaze_runner}" unless File.file?(glaze_runner)
+wasm = File.expand_path(ARGV.fetch(1, File.join(root, "build", "webvas.wasm")))
+abort "Build the WebAssembly runtime first: #{wasm}" unless File.file?(wasm)
 
 FileUtils.rm_rf(destination)
 FileUtils.cp_r(File.join(root, "site"), destination)
-FileUtils.cp(File.join(root, "js", "bridge.js"), File.join(destination, "bridge.js"))
-FileUtils.cp(File.join(root, "js", "loader.js"), File.join(destination, "loader.js"))
-FileUtils.cp(glaze_runner, File.join(destination, "wgsl-runner.js"))
-index = File.join(destination, "index.html")
-html = File.read(index)
-html.sub!(%r{(<meta name="webvas-runtime" content=")[^"]*(">)}, "\\1#{CGI.escapeHTML(runtime_url)}\\2")
-if uri.host
-  html.sub!(/connect-src ([^;]+)/) do
-    sources = Regexp.last_match(1)
-    "connect-src #{sources} https://#{uri.host}"
-  end
-end
-File.write(index, html)
+%w[bridge.js loader.js worker.js].each { |file| FileUtils.cp(File.join(root, "js", file), destination) }
+assets = File.join(destination, "assets")
+FileUtils.mkdir_p(assets)
+FileUtils.cp(wasm, File.join(assets, "webvas.wasm"))
 
-if runtime_url.start_with?(".", "/")
-  abort "Build the WebAssembly runtime first: #{wasm}" unless File.file?(wasm)
-  FileUtils.mkdir_p(File.join(destination, "assets"))
-  FileUtils.cp(wasm, File.join(destination, "assets", "webvas.wasm"))
-  raw_size = File.size(wasm)
-  compressed_size = Zlib::Deflate.deflate(File.binread(wasm), Zlib::BEST_COMPRESSION).bytesize
-  puts "Webvas runtime: #{raw_size} bytes (#{compressed_size} deflate bytes)"
-else
-  puts "Webvas runtime: #{runtime_url}"
-end
+raw_size = File.size(wasm)
+compressed_size = Zlib::Deflate.deflate(File.binread(wasm), Zlib::BEST_COMPRESSION).bytesize
+puts "Webvas runtime: #{raw_size} bytes (#{compressed_size} deflate bytes)"

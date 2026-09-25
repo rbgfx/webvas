@@ -25,11 +25,6 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          repository: rbgfx/glaze
-          path: repos/glaze
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
           repository: rbgfx/larb
           path: repos/larb
           persist-credentials: false
@@ -37,11 +32,6 @@ jobs:
         with:
           repository: rbgfx/rbgl
           path: repos/rbgl
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: rbgfx/rlsl
-          path: repos/rlsl
           persist-credentials: false
       - uses: actions/checkout@v4
         with:

@@ -13,7 +13,6 @@ module Webvas
     def close: (untyped handle) -> untyped
     def request_animation_frame: (Proc callback) -> untyped
     def show_error: (String message, Array[String] backtrace) -> untyped
-    def run_shader: (String canvas, String source, String layout, Proc uniforms) -> untyped
   end
 
   class Backend < RBGL::GUI::Backend
@@ -44,16 +43,6 @@ module Webvas
     def request_animation_frame: (Proc callback) -> untyped
   end
 
-  class Shader
-    attr_reader source: String
-    attr_reader canvas: String
-    attr_reader layout: Hash[Symbol, untyped]
-    def initialize: (String source, ?canvas: String, ?layout: Hash[Symbol, untyped]) -> void
-    def run: (?canvas: String, ?bridge: Bridge) ?{ (Float) -> Hash[Symbol, untyped] } -> untyped
-    def stop: () -> nil
-  end
-
   def self.run: (RBGL::GUI::Window window, ?scheduler: Scheduler, ?on_error: Proc) { (RBGL::Engine::Context, Float) -> void } -> Proc
-  def self.run_shader: (Shader shader, ?canvas: String) ?{ (Float) -> Hash[Symbol, untyped] } -> untyped
   def self.report_error: (StandardError error) -> untyped
 end

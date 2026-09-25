@@ -37,10 +37,5 @@ module Webvas
     def show_error(message, backtrace)
       @api.showError(String(message), Array(backtrace).join("\n"))
     end
-
-    def run_shader(canvas, source, layout, uniforms)
-      @api.shaderMode(canvas)
-      JS.global[:GlazeWGSL].run(canvas, source, layout, uniforms)
-    end
   end
 end

@@ -3,54 +3,69 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="dark">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://rbgfx.github.io https://cdn.jsdelivr.net 'wasm-unsafe-eval' 'unsafe-eval'; worker-src blob:; connect-src 'self' https://rbgfx.github.io data:; style-src 'self' https://rbgfx.github.io; img-src 'self' https://rbgfx.github.io data: blob:; font-src 'self' https://rbgfx.github.io; object-src 'none'; base-uri 'self'">
-    <meta name="webvas-runtime" content="./assets/webvas.wasm">
-    <meta name="description" content="Run Ruby sketches in your browser with RBGL, Gesso, and ruby.wasm.">
-    <title>Webvas — Ruby, in motion</title>
-    <link rel="stylesheet" href="./style.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval' 'unsafe-eval'; worker-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'">
+    <meta name="description" content="Run RBGL Ruby sketches in the browser with Webvas.">
+    <title>Webvas — Ruby graphics in the browser</title>
+    <style>
+      :root { color-scheme: dark; font: 16px/1.5 ui-sans-serif, system-ui, sans-serif; background: #101312; color: #e7e9e2; }
+      body { box-sizing: border-box; max-width: 920px; margin: 0 auto; padding: 64px 24px; }
+      h1 { margin: 0; font-size: clamp(2.5rem, 8vw, 5rem); letter-spacing: -.065em; line-height: 1; }
+      p { color: #a6ada4; }
+      .intro { max-width: 600px; margin: 18px 0 36px; font-size: 1.1rem; }
+      canvas { display: block; width: min(100%, 640px); height: auto; aspect-ratio: 4 / 3; background: #123456; border: 1px solid #303831; border-radius: 8px; }
+      output { display: block; max-width: 640px; min-height: 1.5em; margin-top: 12px; color: #b8c9ad; white-space: pre-wrap; overflow-wrap: anywhere; }
+      code { color: #d4c4a3; }
+      .hint { margin-top: 24px; font-size: .9rem; }
+    </style>
   </head>
   <body>
-    <header class="topbar">
-      <a class="wordmark" href="./" aria-label="Webvas home"><span class="mark">W</span> webvas</a>
-      <div class="top-meta"><span class="live-dot"></span><span>Ruby graphics, in the browser</span><a href="https://github.com/rbgfx/webvas">GitHub ↗</a></div>
-    </header>
     <main>
-      <section class="intro">
-        <h1>Write Ruby.<br><span>Watch it move.</span></h1>
-        <p class="lede">A quiet workspace for sketches, pixels, and shaders.<br>Runs in a dedicated browser worker.</p>
-      </section>
-      <section class="workbench" aria-label="Ruby sketch editor">
-        <div class="toolbar">
-          <div class="file-label"><span class="file-icon">◈</span><span>sketch.rb</span><span class="dirty" id="dirty" aria-hidden="true">●</span></div>
-          <label class="example-select"><span class="sr-only">Load an example</span>
-            <select id="examples"><option value="">Examples</option></select>
-          </label>
-          <div class="toolbar-actions">
-            <button class="quiet-button" id="share" type="button">Share</button>
-            <button class="quiet-button" id="download" type="button">Download .rb</button>
-            <button class="quiet-button" id="download-html" type="button">Download HTML</button>
-            <button class="run-button" id="run" type="button"><span aria-hidden="true">▶</span> Run <kbd>⌘ ↵</kbd></button>
-          </div>
-        </div>
-        <div class="panes">
-          <div class="editor-pane">
-            <div class="pane-heading"><span>EDITOR</span><span>Ruby 4.0 · UTF-8</span></div>
-            <label class="sr-only" for="source">Ruby source code</label>
-            <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
-          </div>
-          <div class="stage-pane">
-            <div class="pane-heading"><span>CANVAS</span><span id="canvas-size">480 × 320</span></div>
-            <div class="stage-wrap" id="stage">
-              <div class="loading" id="loading"><span class="spinner" aria-hidden="true"></span><span id="loading-label">Starting Ruby runtime</span></div>
-            </div>
-            <div class="console" aria-live="polite" aria-atomic="true"><span class="console-dot"></span><span id="status">Preparing the drawing machine…</span></div>
-          </div>
-        </div>
-        <footer class="workbench-foot"><span>Runs in a dedicated worker</span><span>Ctrl / ⌘ + Enter to run</span><span id="performance-state">Frame timing warming up</span><span id="runtime-state">WASM loading</span></footer>
-      </section>
-      <p class="note"><span>✳</span> Source is sent only to the local worker. Share links contain compressed source text.</p>
+      <p>RBGL · WEBASSEMBLY</p>
+      <h1>Webvas</h1>
+      <p class="intro">A small browser backend for Ruby graphics. The triangle responds to pointer input and the Space key.</p>
+      <canvas id="screen" width="320" height="240" aria-label="Interactive Ruby triangle"></canvas>
+      <script type="text/ruby" data-webvas>
+        require "rbgl"
+        require "webvas"
+
+        include Larb
+        include RBGL::Engine
+
+        pressed = false
+        window = RBGL::GUI::Window.new(
+          width: 320,
+          height: 240,
+          backend: Webvas::Backend.new(width: 320, height: 240, pixelated: true)
+        )
+        window.on(:mouse_press) { pressed = true }
+        window.on(:mouse_release) { pressed = false }
+        window.on(:key_press) { |event| pressed = !pressed if event.key == :space }
+
+        pipeline = Pipeline.create do
+          vertex do |input, _uniforms, output|
+            output.position = input.position.to_vec4
+            output.color = input.color
+          end
+          fragment do |input, _uniforms, output|
+            output.color = input.color
+          end
+        end
+        pipeline.cull_mode = :none
+        vertices = VertexBuffer.from_array(VertexLayout.position_color, [
+          { position: Vec3[0.0, 0.65, 0.0], color: Color.red },
+          { position: Vec3[-0.65, -0.65, 0.0], color: Color.green },
+          { position: Vec3[0.65, -0.65, 0.0], color: Color.blue }
+        ])
+
+        Webvas.run(window) do |context, _delta_time|
+          context.clear(color: Color.from_hex(pressed ? "#e5b36a" : "#123456"))
+          context.bind_pipeline(pipeline)
+          context.bind_vertex_buffer(vertices)
+          context.draw_arrays(:triangles, 0, 3)
+        end
+      </script>
+      <p class="hint">Click the canvas or focus it and press <code>Space</code>. See the <a href="https://github.com/rbgfx/webvas">README</a> to use Webvas on your own page.</p>
     </main>
-    <script type="module" src="./app.js"></script>
+    <script src="./loader.js"></script>
   </body>
 </html>

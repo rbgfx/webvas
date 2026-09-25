@@ -1,20 +1,23 @@
-name: Publish playground
+name: Publish browser example
 
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/pages.yml'
+      - 'README.md'
       - 'docs/**'
       - 'js/**'
       - 'lib/**'
       - 'runtime/**'
       - 'script/**'
       - 'site/**'
+      - 'sig/**'
       - 'e2e/**'
       - 'package.json'
       - 'package-lock.json'
       - 'playwright.config.mjs'
+      - 'patches/**'
       - 'webvas.gemspec'
   workflow_dispatch:
 
@@ -38,21 +41,6 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          repository: rbgfx/glaze
-          path: repos/glaze
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: rbgfx/gesso
-          path: repos/gesso
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: rbgfx/glyphic
-          path: repos/glyphic
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
           repository: rbgfx/larb
           path: repos/larb
           persist-credentials: false
@@ -60,11 +48,6 @@ jobs:
         with:
           repository: rbgfx/rbgl
           path: repos/rbgl
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: rbgfx/rlsl
-          path: repos/rlsl
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
@@ -106,7 +89,7 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium
-      - name: Test playground in Chromium
+      - name: Test browser loader in Chromium
         working-directory: repos/webvas
         run: npm run test:browser
       - uses: actions/configure-pages@v5

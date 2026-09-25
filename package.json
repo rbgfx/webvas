@@ -1,5 +1,5 @@
 {
-  "name": "webvas-playground-tests",
+  "name": "webvas-browser-tests",
   "private": true,
   "type": "module",
   "scripts": {

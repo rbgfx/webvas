@@ -5,12 +5,8 @@ gem "js", "~> 2.10.1"
 
 [
   ["webvas", ".."],
-  ["glaze", "../../glaze"],
-  ["gesso", "../../gesso"],
-  ["glyphic", "../../glyphic"],
   ["larb", "../../larb"],
   ["rbgl", "../../rbgl"],
-  ["rlsl", "../../rlsl"],
   ["tessel", "../../tessel"]
 ].each do |name, relative_path|
   path = File.expand_path(relative_path, __dir__)

@@ -7,7 +7,6 @@ require_relative "webvas/backend"
 require_relative "webvas/input"
 require_relative "webvas/key_map"
 require_relative "webvas/runner"
-require_relative "webvas/shader"
 
 module Webvas
   class Error < StandardError; end
@@ -37,9 +36,4 @@ module Webvas
     Bridge.new.show_error(error.message, error.backtrace || [])
   end
 
-  def self.run_shader(shader, canvas: "#gpu", &uniforms)
-    raise ArgumentError, "shader must be a Webvas::Shader" unless shader.is_a?(Shader)
-
-    shader.run(canvas:, &uniforms)
-  end
 end

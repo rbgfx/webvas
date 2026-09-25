@@ -6,7 +6,6 @@
   const runtimeUrl = loader.dataset.runtime || new URL("./assets/webvas.wasm", base).href;
   const workerUrl = new URL("./worker.js", base).href;
   const bridgeUrl = new URL("./bridge.js", base).href;
-  const shaderUrl = new URL("./wgsl-runner.js", base).href;
 
   async function run(sourceElement) {
     const selector = sourceElement.dataset.canvas || "#screen";
@@ -20,35 +19,22 @@
     canvas.insertAdjacentElement("afterend", status);
     const report = message => { status.textContent = message; };
     report("Loading Ruby runtime…");
-
-    const gpu = document.querySelector("#gpu") || document.createElement("canvas");
-    gpu.hidden = true;
-    if (!gpu.isConnected) {
-      gpu.id = "gpu";
-      gpu.hidden = true;
-      canvas.insertAdjacentElement("afterend", gpu);
-    }
     if (canvas.tabIndex < 0) canvas.tabIndex = 0;
 
     const response = await fetch(workerUrl, { credentials: "omit" });
     if (!response.ok) throw new Error(`Worker download failed: ${response.status}`);
     const workerBlobUrl = URL.createObjectURL(new Blob([await response.text()], { type: "text/javascript" }));
     const worker = new Worker(workerBlobUrl, { type: "module", name: "webvas" });
-    const screenSelector = selector;
     worker.addEventListener("message", event => {
       const message = event.data || {};
       if (message.type === "webvas:loading") report(message.message || "Loading Ruby runtime…");
       else if (message.type === "webvas:ready") {
         URL.revokeObjectURL(workerBlobUrl);
         worker.postMessage({ type: "webvas:run", source: sourceElement.textContent });
-      }
-      else if (message.type === "webvas:started") report("Ruby sketch is running");
+      } else if (message.type === "webvas:started") report("Ruby sketch is running");
       else if (message.type === "webvas:error") report([message.message, message.backtrace].filter(Boolean).join("\n"));
-      else if (message.type === "webvas:pixelated" && message.selector === screenSelector) {
+      else if (message.type === "webvas:pixelated" && message.selector === selector) {
         canvas.style.imageRendering = message.enabled ? "pixelated" : "auto";
-      } else if (message.type === "webvas:mode") {
-        canvas.hidden = message.canvas !== screenSelector;
-        gpu.hidden = message.canvas !== "#gpu";
       }
     });
     worker.addEventListener("error", event => {
@@ -58,11 +44,12 @@
 
     const forward = event => {
       if (event.type === "wheel") event.preventDefault();
+      if (event.type === "keydown" && event.code === "Space") event.preventDefault();
       if (event.type === "pointerdown") {
         canvas.focus({ preventScroll: true });
         canvas.setPointerCapture(event.pointerId);
       }
-      const rect = event.currentTarget.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
       worker.postMessage({
         type: "webvas:input",
         event: {
@@ -79,12 +66,11 @@
       canvas.addEventListener(type, forward, type === "wheel" ? { passive: false } : undefined);
     }
 
-    const screen = canvas.transferControlToOffscreen();
-    const gpuCanvas = gpu.transferControlToOffscreen();
+    const offscreen = canvas.transferControlToOffscreen();
     worker.postMessage({
-      type: "webvas:init", screen, gpu: gpuCanvas, screenSelector, gpuSelector: "#gpu",
-      bridgeUrl, shaderUrl, wasmUrl: new URL(runtimeUrl, document.baseURI).href
-    }, [screen, gpuCanvas]);
+      type: "webvas:init", canvas: offscreen, selector,
+      bridgeUrl, wasmUrl: new URL(runtimeUrl, document.baseURI).href
+    }, [offscreen]);
   }
 
   const start = () => document.querySelectorAll('script[type="text/ruby"][data-webvas]').forEach(element => {
