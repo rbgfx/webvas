@@ -69,6 +69,13 @@ jobs:
           ref: main
           path: glyphic
           persist-credentials: false
+      - name: Checkout Glaze
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: rbgfx/glaze
+          ref: main
+          path: glaze
+          persist-credentials: false
       - name: Link local dependencies
         run: |
           ln -s "$GITHUB_WORKSPACE/larb" "$GITHUB_WORKSPACE/../larb"
@@ -77,6 +84,7 @@ jobs:
           ln -s "$GITHUB_WORKSPACE/rlsl" "$GITHUB_WORKSPACE/../rlsl"
           ln -s "$GITHUB_WORKSPACE/gesso" "$GITHUB_WORKSPACE/../gesso"
           ln -s "$GITHUB_WORKSPACE/glyphic" "$GITHUB_WORKSPACE/../glyphic"
+          ln -s "$GITHUB_WORKSPACE/glaze" "$GITHUB_WORKSPACE/../glaze"
       - name: Set up Ruby
         uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1.323.0
         with:
