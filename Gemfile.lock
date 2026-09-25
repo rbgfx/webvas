@@ -17,7 +17,7 @@ PATH
 PATH
   remote: .
   specs:
-    webvas (0.1.0)
+    webvas (0.3.1)
       base64 (~> 0.2)
       rbgl (>= 1.0.0, < 2)
 

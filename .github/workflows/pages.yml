@@ -5,33 +5,116 @@ on:
     branches:
       - main
     paths:
+      - "site/**"
+      - "lib/**"
+      - "js/**"
+      - "runtime/Gemfile"
+      - "patches/**"
+      - "script/**"
+      - "test/**"
+      - "e2e/**"
+      - "package*.json"
+      - "Rakefile"
+      - "Gemfile"
+      - "Gemfile.lock"
+      - "runtime/Gemfile.lock"
+      - "webvas.gemspec"
       - "docs/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build-and-deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    defaults:
+      run:
+        working-directory: main
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          path: main
           persist-credentials: false
-      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
+      - name: Checkout Larb
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: rbgfx/larb
+          path: larb
+          persist-credentials: false
+      - name: Checkout RBGL
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: rbgfx/rbgl
+          path: rbgl
+          persist-credentials: false
+      - name: Checkout Tessel
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: rbgfx/tessel
+          path: tessel
+          persist-credentials: false
+      - name: Checkout Gesso
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: rbgfx/gesso
+          path: gesso
+          persist-credentials: false
+      - name: Checkout Glyphic
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: rbgfx/glyphic
+          path: glyphic
+          persist-credentials: false
+      - name: Checkout RLSL
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: rbgfx/rlsl
+          path: rlsl
+          persist-credentials: false
+      - uses: ruby/setup-ruby@984c0c890880bbf811283d6f09c4607c62d210a4 # v1.323.0
+        with:
+          ruby-version: "4.0"
+          bundler: default
+          bundler-cache: true
+          working-directory: main
+      - name: Verify Ruby package
+        run: bundle exec rake verify
+      - name: Install WebAssembly build dependencies
+        run: BUNDLE_GEMFILE=runtime/Gemfile bundle install
+      - name: Build WebAssembly runtime
+        run: >-
+          BUNDLE_GEMFILE=runtime/Gemfile bundle exec rbwasm build
+          --ruby-version 4.0 --target wasm32-unknown-wasip1
+          --build-profile full --patch "$(pwd)/patches/psych-wasi.patch"
+          -o build/webvas.wasm
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: main/package-lock.json
+      - run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Test browser playground and runtime
+        run: npm run test:browser
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
-          path: docs
+          path: main/public
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

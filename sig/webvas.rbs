@@ -4,10 +4,17 @@ module Webvas
   class Error < StandardError
   end
 
+  class Shader
+    attr_reader wgsl: String
+    attr_reader canvas: String
+    def initialize: (String wgsl, ?canvas: String) -> void
+  end
+
   class Bridge
     def initialize: (?api: untyped) -> void
     def attach: (String selector, Integer width, Integer height, pixelated: bool) -> untyped
     def present: (untyped handle, String bytes, Integer width, Integer height) -> untyped
+    def run_shader: (String selector, String wgsl, Hash[String, untyped] uniforms) -> untyped
     def events: (untyped handle) -> Array[Hash[String, untyped]]
     def resize: (untyped handle, Integer width, Integer height) -> untyped
     def close: (untyped handle) -> untyped
@@ -45,4 +52,5 @@ module Webvas
 
   def self.run: (RBGL::GUI::Window window, ?scheduler: Scheduler, ?on_error: Proc) { (RBGL::Engine::Context, Float) -> void } -> Proc
   def self.report_error: (StandardError error) -> untyped
+  def self.run_shader: (Shader shader, ?uniforms: Hash[Symbol | String, untyped]) -> untyped
 end

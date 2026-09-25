@@ -10,7 +10,7 @@ Rake::TestTask.new(:test) do |task|
   task.pattern = "test/**/*_test.rb"
 end
 RuboCop::RakeTask.new(:lint) do |task|
-  task.options = ["--lint", "--cache", "false", "lib", "test", "Rakefile", "webvas.gemspec"]
+  task.options = ["--lint", "--cache", "false", "lib", "test", "exe", "Rakefile", "webvas.gemspec"]
 end
 
 task :types do
@@ -18,7 +18,7 @@ task :types do
 end
 
 task :javascript do
-  %w[js/bridge.js js/loader.js js/worker.js e2e/loader.spec.mjs].each do |file|
+  %w[js/bridge.js js/loader.js js/worker.js site/app.js site/examples.js e2e/loader.spec.mjs].each do |file|
     sh "node", "--check", file
   end
 end

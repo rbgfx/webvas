@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:browser:performance": "playwright test --grep 'frame measurements'"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0"

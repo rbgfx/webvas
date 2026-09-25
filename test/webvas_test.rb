@@ -37,6 +37,7 @@ class WebvasTest < Test::Unit::TestCase
 
     def attach(*args) = (@calls << [:attach, *args]; 4)
     def present(*args) = (@calls << [:present, *args]; true)
+    def runShader(*args) = (@calls << [:runShader, *args]; true)
     def events(_handle) = '[{"type":"wheel","deltaY":2}]'
     def resize(*args) = (@calls << [:resize, *args]; true)
     def close(*args) = @calls << [:close, *args]
@@ -127,6 +128,16 @@ class WebvasTest < Test::Unit::TestCase
     assert_equal [{ "type" => "wheel", "deltaY" => 2 }], bridge.events(4)
     bridge.show_error("bad", ["line 1", "line 2"])
     assert_equal [:showError, "bad", "line 1\nline 2"], api.calls.last
+    bridge.run_shader("#screen", "fn main() {}", { "time" => 1 })
+    assert_equal [:runShader, "#screen", "fn main() {}", '{"time":1}'], api.calls.last
+  end
+
+  def test_run_shader_requires_a_webvas_shader
+    assert_raise(TypeError) { Webvas.run_shader(Object.new) }
+    shader = Webvas::Shader.new("fn main() {}")
+    assert_equal "#screen", shader.canvas
+    assert_equal "fn main() {}", shader.wgsl
+    assert_raise(ArgumentError) { Webvas::Shader.new("") }
   end
 
   def test_scheduler_reuses_one_animation_callback

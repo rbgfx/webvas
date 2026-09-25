@@ -8,8 +8,9 @@ export default defineConfig({
     browserName: "chromium"
   },
   webServer: {
-    command: "python3 -m http.server 4173 --directory public",
+    command: "bundle exec ruby script/build_site && bundle exec ruby -Ilib -rwebvas -rwebvas/cli -e 'exit Webvas::CLI.run(%w[serve --port 4173 --root] + [ENV.fetch(\"WEBVAS_SITE_DIR\", \"public\")])'",
     url: "http://127.0.0.1:4173",
+    env: { WEBVAS_SITE_DIR: process.env.WEBVAS_SITE_DIR || "public" },
     reuseExistingServer: !process.env.CI,
     timeout: 15_000
   }

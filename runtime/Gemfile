@@ -7,11 +7,14 @@ gem "js", "~> 2.10.1"
   ["webvas", ".."],
   ["larb", "../../larb"],
   ["rbgl", "../../rbgl"],
-  ["tessel", "../../tessel"]
+  ["tessel", "../../tessel"],
+  ["gesso", "../../gesso"],
+  ["glyphic", "../../glyphic"],
+  ["rlsl", "../../rlsl"]
 ].each do |name, relative_path|
   path = File.expand_path(relative_path, __dir__)
   if File.file?(File.join(path, "#{name}.gemspec"))
-    gem name, path: path
+    gem name, path: relative_path
   else
     gem name
   end

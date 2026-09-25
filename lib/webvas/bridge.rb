@@ -18,6 +18,10 @@ module Webvas
       @api.present(handle, Base64.strict_encode64(bytes), width, height)
     end
 
+    def run_shader(selector, wgsl, uniforms)
+      @api.runShader(selector, wgsl, JSON.generate(uniforms))
+    end
+
     def events(handle)
       JSON.parse(@api.events(handle).to_s)
     end

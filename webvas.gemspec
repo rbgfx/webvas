@@ -16,9 +16,11 @@ Gem::Specification.new do |spec|
   spec.metadata["source_code_uri"] = "#{spec.homepage}/tree/main"
   spec.metadata["rubygems_mfa_required"] = "true"
 
-  spec.files = Dir["lib/**/*", "js/**/*", "sig/**/*", "README.md", "CHANGELOG.md", "LICENSE.txt"].select do |file|
+  spec.files = Dir["lib/**/*", "js/**/*", "sig/**/*", "exe/**/*", "patches/**/*", "README.md", "CHANGELOG.md", "LICENSE.txt"].select do |file|
     File.file?(file)
   end
+  spec.bindir = "exe"
+  spec.executables = ["webvas"]
   spec.require_paths = ["lib"]
 
   spec.add_dependency "rbgl", ">= 1.0.0", "< 2"

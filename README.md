@@ -2,80 +2,107 @@
 
 # Webvas
 
-**Run RBGL sketches in a browser with Ruby.**
+**Write Ruby graphics sketches and run them in a browser.**
 
-Webvas connects RBGL's software renderer to an `OffscreenCanvas` and drives one frame at a time with `requestAnimationFrame`.
-
-[Live example](https://rbgfx.github.io/webvas/) · [Ruby API](#ruby-api) · [Browser requirements](#browser-requirements)
+[Playground](https://rbgfx.github.io/webvas/) · [Ruby API](#ruby-api) · [CLI](#cli) · [Security](#security)
 
 </div>
 
+Webvas connects RBGL's software renderer to an `OffscreenCanvas` and advances one frame at a time with `requestAnimationFrame`. The playground includes RBGL, Gesso, and RLSL examples, shareable source links, and single-file HTML downloads.
+
 ## Features
 
-- RBGL browser backend for RGBA frames and pointer, keyboard, and wheel events
-- Frame scheduling through `RBGL::GUI::Window#step`
-- Standalone loader for `<script type="text/ruby" data-webvas>`
-- Runtime published with the example site; no local WebAssembly build is needed to use it
-
-## Install
-
-Add Webvas to the Ruby bundle used to prepare your WebAssembly runtime:
-
-~~~ruby
-gem "webvas"
-~~~
-
-The browser runtime must also include `rbgl` and its dependencies. When using the runtime distributed with the Webvas example, no local build is required.
+- RBGL canvas backend with pointer, keyboard, and wheel input
+- Gesso sketch runner and RLSL WGSL compute shaders
+- Fresh Ruby worker for each playground run, with visible errors and frame measurements
+- Deflate-compressed source in URL fragments; source is not sent to a Webvas service
+- `webvas new`, `serve`, and `build` for standalone sketch projects
+- Browser runtime built with Webvas, RBGL, Tessel, Gesso, Glyphic, and RLSL
 
 ## Quick start
 
-Add a canvas, a Ruby script, and the loader to an HTML page:
+Add the loader and a Ruby source file to an HTML page:
 
 ~~~html
 <canvas id="screen" width="320" height="240"></canvas>
-<script type="text/ruby" data-webvas>
-  require "rbgl"
-  require "webvas"
-
-  window = RBGL::GUI::Window.new(
-    width: 320,
-    height: 240,
-    backend: Webvas::Backend.new(width: 320, height: 240)
-  )
-
-  Webvas.run(window) do |context, _delta_time|
-    context.clear
-    # Bind an RBGL pipeline and draw here.
-  end
-</script>
-<script src="https://rbgfx.github.io/webvas/loader.js"></script>
+<script type="text/ruby" data-webvas data-canvas="#screen" src="app.rb"></script>
+<script src="https://rbgfx.github.io/webvas/loader.js"
+        data-runtime="https://rbgfx.github.io/webvas/assets/webvas.wasm"></script>
 ~~~
 
-The loader reads `assets/webvas.wasm` beside itself by default. Set `data-runtime` on the loader script to use another HTTPS or same-origin runtime URL. Set `data-canvas` on the Ruby script and use the same selector in `Webvas::Backend` when the canvas is not `#screen`.
+In `app.rb`:
+
+~~~ruby
+require "gesso"
+
+Gesso.run(width: 320, height: 240, runner: :web) do
+  draw do
+    background "#101827"
+    no_stroke
+    fill "#f07850"
+    circle width / 2, height / 2, 36
+  end
+end
+~~~
+
+The official runtime is built with these gems already included. A runtime URL can be set with `data-runtime`; use the same URL for sketches that bundle their own dependencies.
 
 ## Ruby API
 
-Create an `RBGL::GUI::Window` with a `Webvas::Backend`, then pass it to `Webvas.run`. The callback receives the RBGL context and elapsed seconds. `Webvas.run` reuses one callback for each animation frame and closes the window when it stops or raises an exception.
+Create an `RBGL::GUI::Window` with `Webvas::Backend.new`, then call `Webvas.run(window)` with a frame block. The block receives the RBGL context and delta time. `Webvas.run` reuses one animation callback, closes the window on stop or error, and reports exceptions through the bridge.
 
-`Webvas::Backend` accepts `width`, `height`, `canvas`, `title`, and `pixelated`. The canvas size sets the rendering resolution; CSS can scale its display size. With `pixelated: true`, scaled output uses nearest-neighbor display.
+`Webvas::Backend` accepts `width`, `height`, `canvas`, `title`, and `pixelated`. Canvas drawing dimensions set render resolution; CSS scales its display. Pointer coordinates are mapped from CSS pixels to render pixels. Focus the canvas to send keyboard input.
 
-Pointer coordinates are mapped from the canvas display bounds to rendering pixels. Pointer buttons, keyboard keys, modifier keys, and wheel deltas are converted to RBGL events. Focus the canvas to send keyboard events.
+RLSL can generate the WGSL source for WebGPU:
 
-## Browser requirements
+~~~ruby
+require "rlsl"
+require "webvas"
 
-- WebAssembly, module workers, and `OffscreenCanvas`
-- A secure context when loading the page over the network
-- A Ruby runtime built with Webvas, RBGL, and RBGL's dependencies
+wgsl = RLSL.to_wgsl(:plasma) do
+  uniforms { float :time }
+  fragment do |frag_coord, resolution, uniforms|
+    uv = frag_coord / resolution.y
+    vec3(sin(uv.x + uniforms.time), uv.y, 0.6)
+  end
+end
+Webvas.run_shader(Webvas::Shader.new(wgsl))
+~~~
 
-Ruby runs in a worker without access to the page DOM. The `js` gem exposes APIs available to that worker, so this worker should not be treated as a security sandbox for hostile code. The page's Content Security Policy must allow the worker, runtime URL, and WebAssembly compilation.
+WebGPU requires a supported browser, secure context, and GPU adapter. The shader runner updates the `resolution` and `time` uniforms automatically.
 
-Blocking frame loops and `sleep` cannot drive animation in the browser. Use `Webvas.run` to advance the window one frame at a time. WebAssembly threads and compiling native extensions in the browser are not supported.
+## CLI
 
-Ruby source is limited to 32 KiB. Frame pixels use base64 between Ruby and JavaScript; a 320×240 RGBA frame is 307,200 bytes before encoding and 409,600 bytes after encoding.
+~~~sh
+gem install webvas
+webvas new my-sketch
+cd my-sketch
+webvas serve
+webvas build -o dist
+~~~
+
+`serve` binds to `127.0.0.1:8000`, serves `.wasm` as `application/wasm`, and reloads when project files change. Use `--host`, `--port`, or `--root` to change its defaults. `build` writes a static site that loads the official runtime. To bundle a custom runtime, add `ruby_wasm` and `js` to the project's `Gemfile`, install it, then run `webvas build --runtime custom`; the project's bundle is passed to `rbwasm build`.
+
+## Playground
+
+Open the [Webvas playground](https://rbgfx.github.io/webvas/). Choose a mode and example, edit the Ruby, then press **Run** or **Ctrl/Cmd + Enter**. Each run starts a fresh worker and canvas. **Share** compresses the source with `CompressionStream` into the URL fragment; **Download HTML** embeds the source as escaped JSON and keeps the runtime on its CDN URL.
+
+## Security and limitations
+
+- Ruby runs in a worker, but the worker is not a security sandbox. Sketches can call browser APIs and make network requests allowed by the page's Content Security Policy. Inspect shared code before running it.
+- Webvas does not set cookies, store source, or send code to a Webvas service. The GitHub Pages project URL shares the `rbgfx.github.io` origin; a dedicated hostname requires a separate hosting or domain decision.
+- Runtime downloads omit browser credentials. Pages need to allow the chosen loader, worker, and runtime in their Content Security Policy.
+- The `js` gem evaluates Ruby-to-JavaScript bridge code, so the playground policy requires `unsafe-eval` and `wasm-unsafe-eval`. This weakens script restrictions; use a dedicated origin for untrusted sketches.
+- The 0.3.0 candidate was verified locally in Chromium 153 on macOS arm64. Firefox, Safari, and mobile browsers are not verified; the software renderer needs `OffscreenCanvas` and module workers, and RLSL also needs WebGPU.
+- Blocking loops and `sleep` stop browser frame progress. WebAssembly threads and compiling native extensions in the browser are unsupported.
+- Ruby source is limited to 32 KiB. RGBA frames use base64 transfer; a 320×240 frame is 307,200 bytes before encoding.
+- RLSL mode requires WebGPU; RBGL and Gesso modes use the software renderer.
+
+See [browser security notes](docs/security.md) and [runtime/performance records](docs/performance.md).
 
 ## Development
 
-The repository expects adjacent checkouts of `larb`, `rbgl`, and `tessel`.
+The repository expects adjacent checkouts of Larb, RBGL, Tessel, Gesso, Glyphic, and RLSL. Ruby unit tests run under CRuby; the browser integration tests use Chromium and the locally built runtime.
 
 ~~~sh
 bundle install
@@ -89,8 +116,6 @@ npm ci
 npx playwright install chromium
 npm run test:browser
 ~~~
-
-The Pages workflow builds the WebAssembly runtime, checks the browser loader in Chromium, and deploys the static example.
 
 ## License
 
