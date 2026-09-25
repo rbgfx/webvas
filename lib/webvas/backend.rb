@@ -19,7 +19,14 @@ module Webvas
     def set_pixels(buffer, width, height)
       width = Integer(width)
       height = Integer(height)
-      bytes = validate_rgba_buffer(buffer, width, height)
+      bytes = String.try_convert(buffer)
+      raise ArgumentError, "Pixel buffer must be a String" unless bytes
+
+      expected_size = width * height * 4
+      unless width.positive? && height.positive? && bytes.bytesize == expected_size
+        raise ArgumentError, "Pixel buffer size mismatch: expected #{expected_size}, got #{bytes.bytesize}"
+      end
+
       resize(width, height) if [width, height] != [@width, @height]
       @pending_pixels = [bytes, width, height]
       true

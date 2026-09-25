@@ -75,6 +75,11 @@ jobs:
         with:
           ruby-version: '4.0'
           bundler: default
+      - name: Build Larb native extension
+        run: |
+          gem install rake-compiler --no-document # zizmor: ignore[adhoc-packages]
+          rake compile
+        working-directory: larb
       - run: bundle install
       - name: Verify tag and version
         run: |
