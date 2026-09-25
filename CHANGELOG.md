@@ -1,6 +1,6 @@
 # Changelog
 
-No 0.2.0 release was published. Version 0.3.0 has a GitHub artifact but was not published to RubyGems; use 0.3.1.
+No 0.2.0 release was published.
 
 ## [0.3.1] - 2026-09-25
 
