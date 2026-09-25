@@ -100,11 +100,18 @@ module Webvas
 
       source = File.realpath(options[:root])
       destination = File.expand_path(options[:output], source)
-      raise Error, "Build output cannot overwrite the project." if destination == source
-      if destination == File.join(source, "assets") || destination.start_with?(File.join(source, "assets") + File::SEPARATOR)
+      ancestor = destination
+      suffix = []
+      until File.exist?(ancestor) || File.symlink?(ancestor)
+        ancestor, name = File.dirname(ancestor), File.basename(ancestor)
+        suffix.unshift(name)
+      end
+      resolved_destination = File.join(File.realpath(ancestor), *suffix)
+      raise Error, "Build output cannot overwrite the project." if resolved_destination == source
+      if resolved_destination == File.join(source, "assets") || resolved_destination.start_with?(File.join(source, "assets") + File::SEPARATOR)
         raise Error, "Build output cannot be inside the project's assets directory."
       end
-      raise Error, "Build output cannot contain the project." if source.start_with?(destination + File::SEPARATOR)
+      raise Error, "Build output cannot contain the project." if source.start_with?(resolved_destination + File::SEPARATOR)
       raise Error, "Project is missing index.html or app.rb." unless %w[index.html app.rb].all? { |file| File.file?(File.join(source, file)) }
 
       FileUtils.mkdir_p(destination)

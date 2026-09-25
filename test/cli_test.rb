@@ -46,6 +46,27 @@ class WebvasCliTest < Test::Unit::TestCase
     end
   end
 
+  def test_build_rejects_output_symlinked_to_the_project
+    Dir.mktmpdir do |directory|
+      File.write(File.join(directory, "index.html"), "original")
+      File.write(File.join(directory, "app.rb"), "app")
+      File.symlink(directory, File.join(directory, "site"))
+      error = StringIO.new
+
+      assert_equal 1, Webvas::CLI.run(["build", "--root", directory, "-o", "site"], out: StringIO.new, err: error)
+      assert_include error.string, "Build output cannot overwrite the project"
+      assert_equal "original", File.read(File.join(directory, "index.html"))
+
+      File.unlink(File.join(directory, "site"))
+      FileUtils.mkdir_p(File.join(directory, "assets"))
+      File.symlink(File.join(directory, "assets"), File.join(directory, "site"))
+      error = StringIO.new
+      assert_equal 1, Webvas::CLI.run(["build", "--root", directory, "-o", "site/output"], out: StringIO.new, err: error)
+      assert_include error.string, "Build output cannot be inside the project's assets directory"
+      assert_false File.exist?(File.join(directory, "assets", "output"))
+    end
+  end
+
   def test_build_custom_bundles_the_wasm_and_local_loader
     Dir.mktmpdir do |directory|
       source = File.join(directory, "project")
