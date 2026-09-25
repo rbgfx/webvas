@@ -4,7 +4,7 @@ gem "ruby_wasm", "~> 2.10.1"
 gem "js", "~> 2.10.1"
 
 gem "webvas", path: ".."
-gem "larb"
+gem "larb", ">= 1.0.2"
 gem "rbgl"
 gem "tessel"
 gem "gesso"
