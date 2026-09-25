@@ -1,14 +1,12 @@
 # Changelog
 
-No 0.2.0 release was published.
-
 ## [0.3.1] - 2026-09-25
 
 ### Fixed
 
-- Build the current WebAssembly runtime before browser tests and Pages deployment.
-- Include the CLI executable and runtime build inputs in the gem.
-- Require a Gesso release that supports browser sketches.
+- Include the `webvas` command and runtime build files in the installed gem.
+- Use the current WebAssembly runtime on the published playground.
+- Install a Gesso version that supports browser sketches.
 
 ## [0.3.0] - 2026-09-25
 
