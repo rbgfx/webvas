@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.2] - 2026-09-26
+
+### Fixed
+
+- Reject build output paths that resolve through symlinks into the project or its assets.
+
 ## [0.3.1] - 2026-09-25
 
 ### Fixed
